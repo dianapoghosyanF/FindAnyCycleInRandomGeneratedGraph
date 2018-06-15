@@ -1,0 +1,64 @@
+== Neo4j Custom 'hasCycleRandomGeneratedGraph' Procedure 
+
+This project builds one custom procedure in Neo4j, 
+for creating random Graph with given ['nodeName1','nodeName2',...] node names
+and 'N' number of relationships. Its return 'true' if there is at least one cycle path by 'cyclePath' object, otherwise return false.
+
+=== Procedure 'custom.hasCycleRandomGeneratedGraph(nodeNames, numberOfEdges)'
+
+[source,cypher]
+
+	CALL custom.hasCycleRandomGeneratedGraph(['s1','s2','s3', 's4', 's5', 's6'], 4);
+
+returns
+
+    ╒════════════════╤══════════════════════════════════════════════════════════════════════╕
+    │ "hasCycle"     │					"cyclePath"             	│                       │
+    ╞════════════════╪══════════════════════════════════════════════════════════════════════╡
+    │true  | false   │[{"name":"s1"},{},{"name":"s2"},{"name":"s2"},{},{"name":"s1"}] | null│
+    └────────────────┴──────────────────────────────────────────────────────────────────────┘
+
+
+=== Building
+
+This project uses maven, to build a jar-file with the procedure in this project, 
+simply package the project with maven:
+
+    mvn clean package
+	
+This will produce a jar-file,`target/FindAnyCycleInRandomGeneratedGraph-1.0.0-SNAPSHOT.jar`,
+that can be deployed in the `plugin` directory of your Neo4j instance.
+
+
+	mvn clean install	
+
+This will also copy created jar file in your specified `neo4j.plugins.directory` directory.
+You need to restart your Neo4j in order could test procedure.
+
+	// get all created nodes
+	MATCH (a:NODE) RETURN a
+
+	// delete all created nodes
+	MATCH (n:NODE)
+	OPTIONAL MATCH (n:NODE)-[r:CONNECTED]-()
+	DELETE n,r
+
+	// detect cycle path
+	MATCH (e:NODE)
+	WHERE SIZE((e:NODE)<-[:CONNECTED]-()) <> 0 
+	AND SIZE(()<-[:CONNECTED]-(e:NODE)) <> 0
+	MATCH path = (e:NODE)<-[:CONNECTED*]-(e:NODE) 
+	RETURN e, path
+
+
+=== Points needed to improve
+
+1. Transaction
+2. add filter and indexing to find cycle path from those nodes only, which names are coinside with new created ones
+	
+	
+=== Author
+
+Name : Diana Poghosyan
+
+E-mail: diana_poghosyan@yahoo.com
